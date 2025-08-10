@@ -1,4 +1,5 @@
 name: CI
+
 on:
   push:
     branches: [ main, development ]
@@ -7,6 +8,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Force a portable local MLflow store on CI (avoids Windows path like /F:)
+      MLFLOW_TRACKING_URI: file:./mlruns
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,7 +28,8 @@ jobs:
 
   docker:
     needs: test
-    if: github.event_name == 'push'
+    # Only build/push images on direct pushes (not PRs) AND when secrets exist
+    if: ${{ github.event_name == 'push' && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,10 +38,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build & Push
+      - name: Build & Push (sha + latest)
         run: |
           IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/mlops-api:${{ github.sha }}
-          docker build -t $IMAGE .
-          docker push $IMAGE
-          docker tag $IMAGE ${{ secrets.DOCKERHUB_USERNAME }}/mlops-api:latest
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          docker tag "$IMAGE" ${{ secrets.DOCKERHUB_USERNAME }}/mlops-api:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/mlops-api:latest
