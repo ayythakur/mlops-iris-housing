@@ -28,8 +28,6 @@ jobs:
 
   docker:
     needs: test
-    # Only build/push images on direct pushes (not PRs) AND when secrets exist
-    if: ${{ github.event_name == 'push' && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
