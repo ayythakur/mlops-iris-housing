@@ -11,6 +11,7 @@ jobs:
     env:
       # Force a portable local MLflow store on CI (avoids Windows path like /F:)
       MLFLOW_TRACKING_URI: file:./mlruns
+      MLFLOW_LOGGED_MODELS_DIR: ./mlruns/logged_models
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -52,4 +52,10 @@ def log_metric(k, v):
 
 def log_model(model, artifact_path: str = "model"):
     import mlflow.sklearn
-    mlflow.sklearn.log_model(model, artifact_path=artifact_path)
+    try:
+        # Prefer logging as a run artifact (portable)
+        mlflow.sklearn.log_model(sk_model=model, artifact_path=artifact_path)
+    except TypeError:
+        # Fallback for very old/new APIs if the signature differs
+        mlflow.sklearn.log_model(model, artifact_path=artifact_path)
+
