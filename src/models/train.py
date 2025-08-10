@@ -1,95 +1,60 @@
-import argparse
+# src/utils/tracking.py
 import os
-import yaml
-import numpy as np
+import mlflow
+from contextlib import contextmanager
+from urllib.parse import urlparse
 
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+def _portable_file_uri(dir_path: str) -> str:
+    """Return a file: URI for an absolute, POSIX-safe path."""
+    abs_dir = os.path.abspath(dir_path)
+    return f"file:{abs_dir}"
 
-from src.data.load import load_iris
-from src.data.preprocess import split_data, build_preprocessor
-from src.utils.tracking import setup_mlflow, run, log_param, log_metric, log_model
-from src.utils.logging import get_logger
-from src.utils.io import save_joblib, save_json
+def setup_mlflow(tracking_uri: str, experiment_name: str):
+    """
+    Normalize MLflow tracking URI so it works on Windows, Linux, and CI.
+    """
+    import logging
+    logger = logging.getLogger("mlflow_setup")
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
+    force_local = False
 
-def load_params(path: str) -> dict:
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Params file not found: {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        params = yaml.safe_load(f)
-    if not params:
-        raise ValueError(f"Params file is empty or invalid YAML: {path}")
-    return params
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        force_local = True
+    else:
+        parsed = urlparse(tracking_uri)
+        if not parsed.scheme:
+            tracking_uri = _portable_file_uri(tracking_uri)
+        elif parsed.scheme.lower() == "file":
+            path = parsed.path or ""
+            if len(path) >= 3 and path[0] == "/" and path[2] == ":":
+                force_local = True
 
+    if force_local:
+        tracking_uri = _portable_file_uri("mlruns")
 
-def build_model(cfg: dict):
-    model_type = cfg["type"]
-    params = cfg.get("params", {})
-    if model_type == "logistic_regression":
-        return LogisticRegression(**params)
-    if model_type == "random_forest":
-        return RandomForestClassifier(**params)
-    raise ValueError(f"Unknown model type: {model_type}")
+    logger.info(f"Using MLflow tracking URI: {tracking_uri}")
 
-
-def main(params_path: str) -> None:
-    logger = get_logger("train", "training.log")
-    params = load_params(params_path)
-
-    setup_mlflow(params["mlflow_tracking_uri"], params["experiment_name"])
-
-    X, y = load_iris()
-    Xtr, Xte, ytr, yte = split_data(
-        X,
-        y,
-        test_size=params["data"]["test_size"],
-        random_state=params["data"]["random_state"],
-    )
-    preproc = build_preprocessor(params["features"]["scale_numeric"])
-
-    best_score = -np.inf
-    best_name = None
-    best_pipe = None
-
-    for m in params["models"]:
-        name = m["name"]
-        clf = build_model(m)
-
-        steps = []
-        if preproc is not None:
-            steps.append(("preprocess", preproc))
-        steps.append(("model", clf))
-        pipe = Pipeline(steps)
-
-        with run(run_name=name):
-            log_param("model", name)
-            pipe.fit(Xtr, ytr)
-            pred = pipe.predict(Xte)
-            acc = float(accuracy_score(yte, pred))
-            log_metric("accuracy", acc)
-            log_model(pipe, artifact_path=f"{name}_model")
-            logger.info(f"{name} accuracy={acc:.4f}")
-
-            if acc > best_score:
-                best_score = acc
-                best_name = name
-                best_pipe = pipe
-
-    if best_pipe is not None:
-        save_joblib(best_pipe, "models/registry/model.joblib")
-        save_json(
-            {"best_model": best_name, "metric": "accuracy", "score": best_score},
-            "models/registry/model_meta.json",
-        )
-        logger.info(
-            f"Saved best model '{best_name}' (accuracy={best_score:.4f})"
-        )
+    mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment(experiment_name)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--params", required=True)
-    main(parser.parse_args().params)
+@contextmanager
+def run(run_name: str = None):
+    with mlflow.start_run(run_name=run_name):
+        yield
+
+def log_param(k, v):
+    mlflow.log_param(k, v)
+
+def log_metric(k, v):
+    mlflow.log_metric(k, v)
+
+def log_model(model, artifact_path: str = "model"):
+    import mlflow.sklearn
+    mlflow.sklearn.log_model(sk_model=model, artifact_path=artifact_path)
