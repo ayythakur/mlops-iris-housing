@@ -71,7 +71,7 @@ Build image:
 docker build -t ayythakur/mlops-api:latest .
 
 Run:
-docker compose -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.all.yml up -d
 # Prometheus -> http://localhost:9090
 # Grafana    -> http://localhost:3000 (admin / admin)
 
