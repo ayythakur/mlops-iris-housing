@@ -1,0 +1,10 @@
+artifact_location: file:///F:/mlops-iris-housing/mlops-iris-housing/mlruns/400870904019025735/models/m-fd93821186cf49d4a11e0201992a51e8/artifacts
+creation_timestamp: 1754813310030
+experiment_id: '400870904019025735'
+last_updated_timestamp: 1754813314524
+model_id: m-fd93821186cf49d4a11e0201992a51e8
+model_type: null
+name: logreg_model
+source_run_id: c4d0533ca77444b4bf130710db5ca5f1
+status: 2
+status_message: null

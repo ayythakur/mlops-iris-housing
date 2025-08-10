@@ -1,0 +1,10 @@
+artifact_location: file:///F:/mlops-iris-housing/mlops-iris-housing/mlruns/400870904019025735/models/m-e7ca26337d46491fa6b81f2a8ca202d9/artifacts
+creation_timestamp: 1754813314808
+experiment_id: '400870904019025735'
+last_updated_timestamp: 1754813317802
+model_id: m-e7ca26337d46491fa6b81f2a8ca202d9
+model_type: null
+name: rf_model
+source_run_id: 60c6e84730154978b85410ae16057756
+status: 2
+status_message: null

@@ -1,0 +1,26 @@
+project_name: "mlops-iris"
+experiment_name: "iris-exp"
+mlflow_tracking_uri: "mlruns"   # local dir
+target: "species"
+
+data:
+  source: "sklearn"
+  test_size: 0.2
+  random_state: 42
+
+features:
+  scale_numeric: true
+
+models:
+  - name: "logreg"
+    type: "logistic_regression"
+    params:
+      C: 1.0
+      max_iter: 1000
+  - name: "rf"
+    type: "random_forest"
+    params:
+      n_estimators: 200
+      max_depth: 5
+
+selection_metric: "accuracy"
