@@ -1,4 +1,5 @@
 import argparse
+import os
 import yaml
 import numpy as np
 
@@ -14,43 +15,52 @@ from src.utils.logging import get_logger
 from src.utils.io import save_joblib, save_json
 
 
-
 def load_params(path: str) -> dict:
-    import yaml, os
     if not os.path.exists(path):
         raise FileNotFoundError(f"Params file not found: {path}")
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         params = yaml.safe_load(f)
     if not params:
         raise ValueError(f"Params file is empty or invalid YAML: {path}")
     return params
 
-def build_model(cfg: dict):
-    t = cfg["type"]
-    p = cfg.get("params", {})
-    if t == "logistic_regression":
-        return LogisticRegression(**p)
-    if t == "random_forest":
-        return RandomForestClassifier(**p)
-    raise ValueError(f"Unknown model type: {t}")
 
-def main(params_path: str):
+def build_model(cfg: dict):
+    model_type = cfg["type"]
+    params = cfg.get("params", {})
+    if model_type == "logistic_regression":
+        return LogisticRegression(**params)
+    if model_type == "random_forest":
+        return RandomForestClassifier(**params)
+    raise ValueError(f"Unknown model type: {model_type}")
+
+
+def main(params_path: str) -> None:
     logger = get_logger("train", "training.log")
     params = load_params(params_path)
 
     setup_mlflow(params["mlflow_tracking_uri"], params["experiment_name"])
 
     X, y = load_iris()
-    Xtr, Xte, ytr, yte = split_data(X, y, test_size=params["data"]["test_size"],
-                                    random_state=params["data"]["random_state"])
+    Xtr, Xte, ytr, yte = split_data(
+        X,
+        y,
+        test_size=params["data"]["test_size"],
+        random_state=params["data"]["random_state"],
+    )
     preproc = build_preprocessor(params["features"]["scale_numeric"])
 
-    best_score, best_name, best_pipe = -np.inf, None, None
+    best_score = -np.inf
+    best_name = None
+    best_pipe = None
 
     for m in params["models"]:
         name = m["name"]
         clf = build_model(m)
-        steps = [("preprocess", preproc)] if preproc is not None else []
+
+        steps = []
+        if preproc is not None:
+            steps.append(("preprocess", preproc))
         steps.append(("model", clf))
         pipe = Pipeline(steps)
 
@@ -64,15 +74,22 @@ def main(params_path: str):
             logger.info(f"{name} accuracy={acc:.4f}")
 
             if acc > best_score:
-                best_score, best_name, best_pipe = acc, name, pipe
+                best_score = acc
+                best_name = name
+                best_pipe = pipe
 
     if best_pipe is not None:
         save_joblib(best_pipe, "models/registry/model.joblib")
-        save_json({"best_model": best_name, "metric": "accuracy", "score": best_score},
-                  "models/registry/model_meta.json")
-        logger.info(f"Saved best model '{best_name}' (accuracy={best_score:.4f})")
+        save_json(
+            {"best_model": best_name, "metric": "accuracy", "score": best_score},
+            "models/registry/model_meta.json",
+        )
+        logger.info(
+            f"Saved best model '{best_name}' (accuracy={best_score:.4f})"
+        )
+
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--params", required=True)
-    main(ap.parse_args().params)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--params", required=True)
+    main(parser.parse_args().params)
