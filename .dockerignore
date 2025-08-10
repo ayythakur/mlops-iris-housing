@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.mlflow/
+mlruns/
+logs/
+data/
+notebooks/
+dist/
+build/
+.git
+.github
+Dockerfile
+README.md

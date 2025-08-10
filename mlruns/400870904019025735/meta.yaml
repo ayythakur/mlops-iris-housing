@@ -1,0 +1,6 @@
+artifact_location: file:///F:/mlops-iris-housing/mlops-iris-housing/mlruns/400870904019025735
+creation_time: 1754813015288
+experiment_id: '400870904019025735'
+last_update_time: 1754813015288
+lifecycle_stage: active
+name: iris-exp

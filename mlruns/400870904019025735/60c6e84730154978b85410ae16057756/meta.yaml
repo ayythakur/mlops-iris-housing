@@ -1,0 +1,14 @@
+artifact_uri: file:///F:/mlops-iris-housing/mlops-iris-housing/mlruns/400870904019025735/60c6e84730154978b85410ae16057756/artifacts
+end_time: 1754813317815
+entry_point_name: ''
+experiment_id: '400870904019025735'
+lifecycle_stage: active
+run_id: 60c6e84730154978b85410ae16057756
+run_name: rf
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754813314542
+status: 3
+tags: []
+user_id: HP
