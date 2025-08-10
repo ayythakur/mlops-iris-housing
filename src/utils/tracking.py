@@ -58,4 +58,3 @@ def log_model(model, artifact_path: str = "model"):
     except TypeError:
         # Fallback for very old/new APIs if the signature differs
         mlflow.sklearn.log_model(model, artifact_path=artifact_path)
-
