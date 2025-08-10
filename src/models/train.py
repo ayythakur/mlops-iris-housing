@@ -1,4 +1,7 @@
-import argparse, yaml, numpy as np
+import argparse
+import yaml
+import numpy as np
+
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -9,6 +12,8 @@ from src.data.preprocess import split_data, build_preprocessor
 from src.utils.tracking import setup_mlflow, run, log_param, log_metric, log_model
 from src.utils.logging import get_logger
 from src.utils.io import save_joblib, save_json
+
+
 
 def load_params(path: str) -> dict:
     import yaml, os
@@ -21,9 +26,12 @@ def load_params(path: str) -> dict:
     return params
 
 def build_model(cfg: dict):
-    t, p = cfg["type"], cfg.get("params", {})
-    if t == "logistic_regression": return LogisticRegression(**p)
-    if t == "random_forest":       return RandomForestClassifier(**p)
+    t = cfg["type"]
+    p = cfg.get("params", {})
+    if t == "logistic_regression":
+        return LogisticRegression(**p)
+    if t == "random_forest":
+        return RandomForestClassifier(**p)
     raise ValueError(f"Unknown model type: {t}")
 
 def main(params_path: str):

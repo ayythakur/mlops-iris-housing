@@ -1,4 +1,6 @@
-import os, subprocess, sys, json
+import os
+import subprocess
+import sys
 
 def test_training_script_runs():
     # run a quick training
